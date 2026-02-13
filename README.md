@@ -37,8 +37,9 @@ Uma solução completa para organização de competições esportivas, automatiz
 ## 📦 Como Instalar e Rodar
 
 1. **Clone o repositório**:
-   ```bash
-2. **Instale as dependências:
+   ´´´´bash
+   git clone https://github.com/seu-usuario/nome-do-repositorio.git
+3. **Instale as dependências:
   ´´´´Bash
     pip install pandas openpyxl PyPDF2 reportlab
    git clone [https://github.com/seu-usuario/nome-do-repositorio.git](https://github.com/seu-usuario/nome-do-repositorio.git)
