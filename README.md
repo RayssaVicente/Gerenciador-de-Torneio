@@ -37,7 +37,7 @@ Uma solução completa para organização de competições esportivas, automatiz
 ## 📦 Como Instalar e Rodar
 
 1. **Clone o repositório**:
-   git clone https://github.com/seu-usuario/nome-do-repositorio.git
+   git clone https://github.com/RayssaVicente/Gerenciador-de-Torneio.git
 2. **Entre no diretório do projeto:**
     cd nome-do-repositorio
 3. **Instale as dependências:**
@@ -49,7 +49,7 @@ Uma solução completa para organização de competições esportivas, automatiz
 
 Rayssa Vicente da Silva Viegas
 
-LinkedIn: [https://www.linkedin.com/in/rayssa-vicente-viegas-0b3027201/]
+[LinkedIn]: (https://www.linkedin.com/in/rayssa-vicente-viegas-0b3027201/)
 
 E-mail: rayssavicenteviegas@gmail.com
 
