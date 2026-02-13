@@ -37,10 +37,20 @@ Uma solução completa para organização de competições esportivas, automatiz
 ## 📦 Como Instalar e Rodar
 
 1. **Clone o repositório**:
-   ´´´´bash
    git clone https://github.com/seu-usuario/nome-do-repositorio.git
-3. **Instale as dependências:
-  ´´´´Bash
-    pip install pandas openpyxl PyPDF2 reportlab
-   git clone [https://github.com/seu-usuario/nome-do-repositorio.git](https://github.com/seu-usuario/nome-do-repositorio.git)
+2. **Entre no diretório do projeto:**
+    cd nome-do-repositorio
+3. **Instale as dependências:**
+   pip install pandas openpyxl PyPDF2 reportlab
+4. **Execute a aplicação:**
+      python geradorTorneio4-ultima-alteracao.py
 
+## Desenvolvedora
+
+Rayssa Vicente da Silva Viegas
+
+LinkedIn: [https://www.linkedin.com/in/rayssa-vicente-viegas-0b3027201/]
+
+E-mail: rayssavicenteviegas@gmail.com
+
+Portfólio: Desenvolvedora de Software
