@@ -53,4 +53,3 @@ LinkedIn https://www.linkedin.com/in/rayssa-vicente-viegas-0b3027201/
 
 E-mail: rayssavicenteviegas@gmail.com
 
-Portfólio: Desenvolvedora de Software
