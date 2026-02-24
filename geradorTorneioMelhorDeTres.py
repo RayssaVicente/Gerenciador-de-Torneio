@@ -368,42 +368,39 @@ class TorneioApp:
         if self.duelos_reais_pagina == 0:
             self.btn_next.config(state="normal")
 
+
+    def registrar_vitoria_direta(self, venc):
+        """Auxiliar para processar W.O. sem interface"""
+        if venc != "W.O.":
+            self.vencedores_fase.append(venc)
+            self.pontos_atleta_atual[venc]["vitorias"] += 1
+        self.votos_fase_total += 1 # Conta para o total da fase técnica
+
     def vencer_paginado(self, vencedor, perdedor, frame):
-
-        # ===== FINAL MELHOR DE 3 =====
+        # ===== FINAL MD3 =====
         if len(self.chave) == 2 and not self.em_repescagem:
-
             if vencedor not in self.vitorias_md3:
                 self.vitorias_md3[vencedor] = 0
             if perdedor not in self.vitorias_md3:
                 self.vitorias_md3[perdedor] = 0
 
             self.vitorias_md3[vencedor] += 1
-
-            placar_v = self.vitorias_md3[vencedor]
-            placar_p = self.vitorias_md3[perdedor]
+            v_wins = self.vitorias_md3[vencedor]
+            p_wins = self.vitorias_md3[perdedor]
 
             messagebox.showinfo(
-                "Final - Melhor de 3",
-                f"{vencedor} venceu esta disputa!\n\n"
-                f"PLACAR:\n{vencedor} {placar_v} x {placar_p} {perdedor}"
+                "Placar MD3",
+                f"{vencedor} venceu esta rodada!\n"
+                f"Placar: {vencedor} {v_wins} x {p_wins} {perdedor}"
             )
 
-            # ainda não terminou
-            if placar_v < 2:
-                # reativa botões para próxima disputa
+            if v_wins < 2:
                 for b in frame.winfo_children():
                     if isinstance(b, tk.Button):
                         b.config(state="normal", bg="white")
                 return
 
-            # ===== CAMPEÃO DEFINIDO =====
-            messagebox.showinfo(
-                "CAMPEÃO!",
-                f"{vencedor} venceu por {placar_v} x {placar_p}!"
-            )
-
-        # ===== LÓGICA NORMAL DO MATA-MATA =====
+        # ===== LÓGICA NORMAL =====
         for b in frame.winfo_children():
             if isinstance(b, tk.Button):
                 b.config(state="disabled", bg="#333")
@@ -415,90 +412,17 @@ class TorneioApp:
         tag = "Repescagem" if self.em_repescagem else f"Fase {self.fase_n}"
         self.historico_confrontos.append([tag, f"{vencedor} venceu {perdedor}"])
 
-        if not self.em_repescagem:
+        # ===== REPESCAGEM CORRIGIDA =====
+        if not self.em_repescagem and perdedor != "W.O.":
+
             if len(self.chave) == 2:
                 self.perdedor_final_principal = perdedor
-            elif len(self.chave) > 2 and perdedor != "W.O.":
-                self.perdedores_geral.append(perdedor)
+            else:
+                if perdedor not in self.perdedores_geral:
+                    self.perdedores_geral.append(perdedor)
 
         self.votos_pagina += 1
-
         if self.votos_pagina >= self.duelos_reais_pagina:
-            self.btn_next.config(state="normal")
-
-
-    def proxima_fase(self):
-        self.pagina_atual = 0
-        
-        if self.rodada_ajuste:
-            self.chave = self.atletas_espera + self.vencedores_fase
-            self.rodada_ajuste = False
-            self.fase_n += 1
-            self.gerar_fase_ui()
-            
-        elif len(self.vencedores_fase) == 1:
-            if not self.em_repescagem:
-                self.campeao = self.vencedores_fase[0]
-                self.iniciar_repescagem_completa()
-            else:
-                self.campeao_repescagem = self.vencedores_fase[0]
-                self.disputa_final_vice()
-        else:
-            # Passa apenas os vencedores REAIS para a próxima chave
-            self.chave = [v for v in self.vencedores_fase if v != "W.O."]
-            self.fase_n += 1
-            self.gerar_fase_ui()
-
-    def proxima_fase(self):
-        self.pagina_atual = 0
-        
-        if self.rodada_ajuste:
-            # Fase de ajuste (quando não é potência de 2, ex: 9 ou 10 atletas)
-            proxima_chave = self.atletas_espera + self.vencedores_fase
-            self.chave = proxima_chave
-            self.rodada_ajuste = False
-            self.fase_n += 1
-            self.gerar_fase_ui()
-            
-        elif len(self.vencedores_fase) == 1:
-            # Determinou o vencedor da chave atual
-            if not self.em_repescagem:
-                self.campeao = self.vencedores_fase[0]
-                self.iniciar_repescagem_completa()
-            else:
-                self.campeao_repescagem = self.vencedores_fase[0]
-                self.disputa_final_vice()
-        else:
-            # Avança normal (Vencedores viram a nova chave)
-            self.chave = list(self.vencedores_fase)
-            self.fase_n += 1
-            self.gerar_fase_ui()
-
-    def registrar_vitoria_direta(self, venc):
-        """Auxiliar para processar W.O. sem interface"""
-        if venc != "W.O.":
-            self.vencedores_fase.append(venc)
-            self.pontos_atleta_atual[venc]["vitorias"] += 1
-        self.votos_fase_total += 1 # Conta para o total da fase técnica
-
-    def vencer_paginado(self, vencedor, perdedor, frame):
-        """Versão modificada do 'vencer' para suportar páginas"""
-        for b in frame.winfo_children():
-            if isinstance(b, tk.Button): b.config(state="disabled", bg="#333")
-            
-        self.vencedores_fase.append(vencedor)
-        self.pontos_atleta_atual[vencedor]["vitorias"] += 1
-        
-        tag = "Repescagem" if self.em_repescagem else f"Fase {self.fase_n}"
-        self.historico_confrontos.append([tag, f"{vencedor} venceu {perdedor}"])
-        
-        # Lógica de perdedores
-        if not self.em_repescagem:
-            if len(self.chave) == 2: self.perdedor_final_principal = perdedor
-            elif len(self.chave) > 2 and perdedor != "W.O.": self.perdedores_geral.append(perdedor)
-
-        self.votos_pagina += 1
-        if self.votos_pagina == self.duelos_reais_pagina:
             self.btn_next.config(state="normal")
 
     def proxima_pagina(self):
@@ -524,47 +448,68 @@ class TorneioApp:
         if self.votos == len(self.chave)//2: self.btn_next.config(state="normal")
 
     def proxima_fase(self):
-        # Resetar página para a nova fase/repescagem
+    # sempre volta para página 0
         self.pagina_atual = 0
-        
+
+        # =========================
+        # RODADA DE AJUSTE (pré-chave)
+        # =========================
         if self.rodada_ajuste:
-            # Une os vencedores da Fase 1 com os atletas que estavam esperando
-            competidores_fase_2 = self.atletas_espera + self.vencedores_fase
-            
-            # Garante que a chave da Fase 2 tenha tamanho par (Potência de 2)
-            tamanho_alvo = 2 ** math.ceil(math.log2(len(competidores_fase_2)))
-            self.chave = competidores_fase_2 + (["W.O."] * (tamanho_alvo - len(competidores_fase_2)))
-            
+
+            competidores = self.atletas_espera + self.vencedores_fase
+
+            tamanho_alvo = 2 ** math.ceil(math.log2(len(competidores)))
+            self.chave = competidores + (["W.O."] * (tamanho_alvo - len(competidores)))
+
             self.rodada_ajuste = False
             self.fase_n += 1
             self.gerar_fase_ui()
-            
-        elif len(self.vencedores_fase) == 1:
-            # Lógica de finalização (Campeão)
+            return
+
+        # =========================
+        # FINAL DA CHAVE ATUAL
+        # =========================
+        if len(self.vencedores_fase) == 1:
+
             if not self.em_repescagem:
+                # terminou chave principal
                 self.campeao = self.vencedores_fase[0]
                 self.iniciar_repescagem_completa()
             else:
+                # terminou repescagem
                 self.campeao_repescagem = self.vencedores_fase[0]
                 self.disputa_final_vice()
-        else:
-            # Avança para a próxima fase comum (Quartas -> Semi -> Final)
-            vencedores_reais = [p for p in self.vencedores_fase if p != "W.O."]
-            tamanho_alvo = 2 ** math.ceil(math.log2(len(vencedores_reais)))
-            self.chave = vencedores_reais + (["W.O."] * (tamanho_alvo - len(vencedores_reais)))
-            
-            self.fase_n += 1
-            self.gerar_fase_ui()
 
+            return
+
+        # =========================
+        # PRÓXIMA FASE NORMAL
+        # =========================
+        vencedores_reais = [p for p in self.vencedores_fase if p != "W.O."]
+
+        tamanho_alvo = 2 ** math.ceil(math.log2(len(vencedores_reais)))
+        self.chave = vencedores_reais + (["W.O."] * (tamanho_alvo - len(vencedores_reais)))
+
+        self.fase_n += 1
+        self.gerar_fase_ui()
 
     def iniciar_repescagem_completa(self):
-        self.em_repescagem = True; self.fase_n = 1
+        self.em_repescagem = True
+        self.fase_n = 1
+        
+        # Filtra W.O. e garante que o perdedor da final esteja na lista
         self.chave_rep = [p for p in self.perdedores_geral if p != "W.O."]
+        
         if not self.chave_rep:
-            self.campeao_repescagem = "Nenhum"; self.disputa_final_vice()
+            self.campeao_repescagem = "Nenhum"
+            self.disputa_final_vice()
             return
+
+        # Calcula potência de 2 para a chave de repescagem
         tamanho = 2 ** math.ceil(math.log2(len(self.chave_rep)))
         self.chave = self.chave_rep + (["W.O."] * (tamanho - len(self.chave_rep)))
+        
+        messagebox.showinfo("Repescagem", "Iniciando repescagem com todos os perdedores da chave principal.")
         self.gerar_fase_ui()
 
     def disputa_final_vice(self):
@@ -688,11 +633,11 @@ class TorneioApp:
             messagebox.showerror("Erro", f"Feche o Excel antes de salvar!\nErro: {e}")
 
 
+    
+
     def exportar_pdf(self):
         # Nome formatado: Relatorio_Categoria_Clube_Data
         nome_sugerido = f"Relatorio_{self.categoria}_{self.clube}_{self.data_etapa}.pdf"
-        
-        # Substituir caracteres que o Windows não aceita em nomes de arquivos (como "/")
         nome_sugerido = nome_sugerido.replace("/", "-") 
 
         path = filedialog.asksaveasfilename(
@@ -720,8 +665,6 @@ class TorneioApp:
         elements.append(Paragraph(f"<b>{self.clube}</b> | CATEGORIA: {self.categoria} | DATA: {self.data_etapa}", style_centro))
         elements.append(Spacer(1, 20))
 
-        
-
         # ===== PÓDIO FINAL =====
         elements.append(Paragraph("<b>PÓDIO FINAL</b>", styles["Heading2"]))
         podio_data = [
@@ -741,15 +684,23 @@ class TorneioApp:
         elements.append(t_podio)
         elements.append(Spacer(1, 25))
 
-        # --- A PARTE DA PONTUAÇÃO DETALHADA FOI REMOVIDA DAQUI ---
-
         # ===== HISTÓRICO DE CONFRONTOS =====
         elements.append(Paragraph("<b>HISTÓRICO DE CONFRONTOS</b>", styles["Heading2"]))
         elements.append(Spacer(1, 8))
         
         hist_data = [["Fase", "Resultado"]]
+        
+        # 1. Adiciona os confrontos normais das fases
         for f, r in self.historico_confrontos:
             hist_data.append([f, r])
+
+        # 2. ADICIONA O RESULTADO DA MD3 NO FINAL DO HISTÓRICO
+        if self.vitorias_md3:
+            # Texto solicitado: "Placar da final:"
+            
+            # Formata os nomes e vitórias (Ex: AtletaA 2 vitórias AtletaB 1 vitórias)
+            detalhes_md3 = " ".join([f"{atleta} {vits} vitórias" for atleta, vits in self.vitorias_md3.items()])
+            hist_data.append(["Placar da final:", detalhes_md3])
 
         t_hist = Table(hist_data, colWidths=[100, 340])
         t_hist.setStyle(TableStyle([
@@ -764,7 +715,7 @@ class TorneioApp:
         # Gerar o PDF
         try:
             doc.build(elements)
-            messagebox.showinfo("Sucesso", "Relatório PDF gerado (sem pontuação detalhada)!")
+            messagebox.showinfo("Sucesso", "Relatório PDF gerado!")
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao gerar PDF: {e}")
 
