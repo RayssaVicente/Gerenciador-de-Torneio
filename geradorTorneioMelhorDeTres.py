@@ -209,7 +209,10 @@ class TorneioApp:
 
 
     def iniciar_torneio(self):
-        # --- NOVA VALIDAÇÃO DE CAMPOS ---
+    # --- RESET IMPORTANTE ---
+        self.pagina_atual = 0
+
+        # --- VALIDAÇÃO E CAPTURA DE DADOS ---
         self.clube = self.ent_clube.get().strip().upper()
         self.categoria = self.ent_cat.get().strip().upper()
         self.nome_prova = self.ent_prova.get().strip().upper()
@@ -217,40 +220,54 @@ class TorneioApp:
         self.vitorias_md3 = {}
 
         if not self.clube or not self.categoria or not self.nome_prova:
-            return messagebox.showwarning("Campos Obrigatórios", 
-                "Por favor, preencha: Nome da Prova, Categoria e Clube antes de iniciar.")
+            return messagebox.showwarning("Campos Obrigatórios", "Preencha Prova, Categoria e Clube.")
 
         nomes = [n.strip().upper() for n in self.txt_nomes.get("1.0", tk.END).split('\n') if n.strip()]
         cpfs = [c.strip() for c in self.txt_cpfs.get("1.0", tk.END).split('\n') if c.strip()]
-        
-        if len(nomes) != len(cpfs):
-            return messagebox.showerror("Erro", "Quantidade de nomes e CPFs não coincide.")
-        if len(nomes) < 2: 
-            return messagebox.showerror("Erro", "Mínimo 2 atletas.")
 
-        # Restante dos dados da competição
+        if len(nomes) != len(cpfs):
+            return messagebox.showerror("Erro", "Nomes e CPFs não coincidem.")
+
         self.competidores_dados = {nomes[i]: cpfs[i] for i in range(len(nomes))}
         self.pontos_atleta_atual = {n: {"vitorias": 0, "bonus": 0} for n in nomes}
         self.participantes_originais = list(nomes)
-        
-         #     # --- LÓGICA DE EDITAL (POTÊNCIA DE 2) ---
+
+        # ==============================
+        # 🔥 NOVA LÓGICA CORRIGIDA
+        # ==============================
         n = len(nomes)
-        proxima_potencia = 2**math.floor(math.log2(n))
-        num_lutas_ajuste = n - proxima_potencia
+
+        # próxima potência de 2
+        proxima_potencia = 2 ** math.ceil(math.log2(n))
+
+        # quantos precisam jogar antes
+        excesso = proxima_potencia - n
+
+        # número de lutas iniciais
+        num_lutas_ajuste = excesso
 
         if num_lutas_ajuste > 0:
-            # Fase 1: Apenas os últimos atletas da lista lutam para 'ajustar' a chave
-            # Ex: Se são 9, os atletas 8 e 9 lutam entre si.
-            self.atletas_espera = nomes[:proxima_potencia - num_lutas_ajuste]
-            self.chave = nomes[len(self.atletas_espera):]
-            self.fase_n = 1
+            # jogadores que vão lutar primeiro
+            qtd_jogadores_ajuste = num_lutas_ajuste * 2
+
+            # garante que não passe do total
+            qtd_jogadores_ajuste = min(qtd_jogadores_ajuste, n)
+
+            self.chave = nomes[:qtd_jogadores_ajuste]
+            self.atletas_espera = nomes[qtd_jogadores_ajuste:]
+
             self.rodada_ajuste = True
+            self.fase_n = 1
         else:
-            # Já é potência de 2 (2, 4, 8, 16...)
             self.chave = nomes
             self.atletas_espera = []
-            self.fase_n = 1
             self.rodada_ajuste = False
+            self.fase_n = 1
+
+        # DEBUG (pode remover depois)
+        print("Participantes:", nomes)
+        print("Chave inicial:", self.chave)
+        print("Espera:", self.atletas_espera)
 
         self.gerar_fase_ui()
 
@@ -447,51 +464,50 @@ class TorneioApp:
         self.votos += 1
         if self.votos == len(self.chave)//2: self.btn_next.config(state="normal")
 
+
+
+    
+
     def proxima_fase(self):
-    # sempre volta para página 0
         self.pagina_atual = 0
-
-        # =========================
-        # RODADA DE AJUSTE (pré-chave)
-        # =========================
+        
+        # 1. Se era rodada de ajuste, une os vencedores com quem estava esperando
         if self.rodada_ajuste:
-
-            competidores = self.atletas_espera + self.vencedores_fase
-
-            tamanho_alvo = 2 ** math.ceil(math.log2(len(competidores)))
-            self.chave = competidores + (["W.O."] * (tamanho_alvo - len(competidores)))
-
+            vencedores_reais = [p for p in self.vencedores_fase if p != "W.O."]
+            self.chave = self.atletas_espera + vencedores_reais
             self.rodada_ajuste = False
             self.fase_n += 1
+            # Garante que a nova chave seja potência de 2 para as próximas fases
+            tamanho_alvo = 2 ** math.ceil(math.log2(len(self.chave)))
+            while len(self.chave) < tamanho_alvo:
+                self.chave.append("W.O.")
             self.gerar_fase_ui()
             return
 
-        # =========================
-        # FINAL DA CHAVE ATUAL
-        # =========================
-        if len(self.vencedores_fase) == 1:
-
+        # 2. Verifica se o torneio acabou (Chave principal ou Repescagem)
+        # A final só acontece se restarem apenas 2 na chave e já tivermos passado pelas fases anteriores
+        if len(self.chave) == 2:
             if not self.em_repescagem:
-                # terminou chave principal
                 self.campeao = self.vencedores_fase[0]
+                messagebox.showinfo("Fim da Chave", f"Campeão da Chave Principal: {self.campeao}")
                 self.iniciar_repescagem_completa()
             else:
-                # terminou repescagem
                 self.campeao_repescagem = self.vencedores_fase[0]
                 self.disputa_final_vice()
-
             return
 
-        # =========================
-        # PRÓXIMA FASE NORMAL
-        # =========================
+        # 3. Avança para a próxima fase normal (Quartas, Semis, etc)
         vencedores_reais = [p for p in self.vencedores_fase if p != "W.O."]
-
-        tamanho_alvo = 2 ** math.ceil(math.log2(len(vencedores_reais)))
-        self.chave = vencedores_reais + (["W.O."] * (tamanho_alvo - len(vencedores_reais)))
+        self.chave = vencedores_reais
+        
+        # Preenchimento de W.O. para manter potências de 2 (2, 4, 8, 16...)
+        tamanho_alvo = 2 ** math.ceil(math.log2(len(self.chave)))
+        while len(self.chave) < tamanho_alvo:
+            self.chave.append("W.O.")
 
         self.fase_n += 1
         self.gerar_fase_ui()
+     
 
     def iniciar_repescagem_completa(self):
         self.em_repescagem = True
